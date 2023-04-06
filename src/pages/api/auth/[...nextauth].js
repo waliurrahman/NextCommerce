@@ -1,34 +1,30 @@
 import NextAuth from 'next-auth';
-import Providers from 'next-auth/providers';
+import { providers } from 'next-auth/react'; // change import statement
+
 import { User } from 'models/User';
 import dbConnect from 'lib/dbConnect';
 
 export default NextAuth({
   providers: [
-    Providers.Credentials({
-      async authorize(credentials) {
-        await dbConnect();
-        const user = await User.findOne({ username: credentials.username });
-        if (user && user.password === credentials.password) {
-          return user;
-        }
-        return null;
-      }
-    })
+    providers.Google({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
   ],
   callbacks: {
-    async jwt(token, user, account, profile, isNewUser) {
-      if (user) {
-        token.userId = user.id;
+    async signIn(user, account, profile) {
+      await dbConnect();
+
+      try {
+        await User.findOneAndUpdate(
+          { email: user.email },
+          { $set: { email: user.email } },
+          { upsert: true }
+        );
+        return true;
+      } catch (error) {
+        return false;
       }
-
-      return token;
-    },
-
-    async session(session, token) {
-      session.user.id = token.userId;
-
-      return session;
     },
   },
 });
