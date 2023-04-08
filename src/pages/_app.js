@@ -1,9 +1,15 @@
 import '@/styles/globals.css'
 import Layout from '../components/Layout';
+import AccountWithProvider from "../pages/account";
 
-export default function App({ Component, pageProps }) {
-  return <Layout>
-    <Component {...pageProps} />
+function MyApp({ Component, pageProps }) {
+  return (
+    <Layout>
+      <AccountWithProvider session={pageProps.session}>
+        <Component {...pageProps} />
+      </AccountWithProvider>
     </Layout>
+  )
 }
 
+export default MyApp
