@@ -14,6 +14,16 @@ const handler = async (req, res) => {
       console.error(error);
       res.status(500).json({ message: "Something went wrong." });
     }
+  } else if (req.method === 'GET') {
+    await dbConnect();
+
+    try {
+      const users = await User.find({});
+      res.status(200).json(users);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Something went wrong." });
+    }
   } else {
     res.status(405).json({ message: "Method Not Allowed" });
   }
