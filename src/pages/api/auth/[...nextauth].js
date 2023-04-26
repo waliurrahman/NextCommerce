@@ -1,55 +1,50 @@
 import NextAuth from 'next-auth';
+import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import GithubProvider from 'next-auth/providers/github';
 import { User } from 'models/User';
 import dbConnect from 'lib/dbConnect';
 
 export default NextAuth({
   providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
     CredentialsProvider({
-      name: 'Credentials',
-      credentials: {
-        username: { label: 'Email', type: 'email', placeholder: 'example@example.com' },
-        password: { label: 'Password', type: 'password' },
-      },
-      authorize: async (credentials) => {
+      async authorize(credentials) {
         await dbConnect();
 
-        try {
-          const user = await User.findOne({ email: credentials.username });
-          if (!user) {
-            return null;
-          }
+        const { email, password } = credentials;
 
-          const isValidPassword = await user.comparePassword(credentials.password);
-          if (!isValidPassword) {
-            return null;
-          }
+        const user = await User.findOne({ email });
 
-          return { id: user._id };
-        } catch (error) {
-          return null;
+        if (!user || password !== user.password) {
+          throw new Error('Invalid email or password');
         }
+
+        return { email: user.email };
       },
+    }),
+    GithubProvider({
+      clientId: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET,
     }),
   ],
   callbacks: {
     async signIn(user, account, profile) {
-      if (account.provider === 'google') {
-        await dbConnect();
+      await dbConnect();
 
-        try {
-          await User.findOneAndUpdate(
-            { email: user.email },
-            { $set: { email: user.email } },
-            { upsert: true }
-          );
-          return true;
-        } catch (error) {
-          return false;
-        }
+      try {
+        await User.findOneAndUpdate(
+          { email: user.email },
+          { $set: { email: user.email } },
+          { upsert: true }
+        );
+        return true;
+      } catch (error) {
+        return false;
       }
-
-      return true;
     },
   },
 });
