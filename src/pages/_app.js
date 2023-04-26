@@ -1,15 +1,15 @@
 import '@/styles/globals.css'
 import Layout from '../components/Layout';
-import AccountWithProvider from "../pages/account";
+import { SessionProvider } from "next-auth/react"
 
-function MyApp({ Component, pageProps }) {
+export default function App({
+  Component, pageProps: { session, ...pageProps }
+}) {
   return (
-    <Layout>
-      <AccountWithProvider session={pageProps.session}>
-        <Component {...pageProps} />
-      </AccountWithProvider>
-    </Layout>
+    <SessionProvider session={session}>
+      <Layout>
+        <Component {...pageProps}/>
+      </Layout>
+    </SessionProvider>
   )
 }
-
-export default MyApp

@@ -1,34 +1,55 @@
 import NextAuth from 'next-auth';
-import Providers from 'next-auth/providers';
+import CredentialsProvider from 'next-auth/providers/credentials';
 import { User } from 'models/User';
 import dbConnect from 'lib/dbConnect';
 
 export default NextAuth({
   providers: [
-    Providers.Credentials({
-      async authorize(credentials) {
+    CredentialsProvider({
+      name: 'Credentials',
+      credentials: {
+        username: { label: 'Email', type: 'email', placeholder: 'example@example.com' },
+        password: { label: 'Password', type: 'password' },
+      },
+      authorize: async (credentials) => {
         await dbConnect();
-        const user = await User.findOne({ username: credentials.username });
-        if (user && user.password === credentials.password) {
-          return user;
+
+        try {
+          const user = await User.findOne({ email: credentials.username });
+          if (!user) {
+            return null;
+          }
+
+          const isValidPassword = await user.comparePassword(credentials.password);
+          if (!isValidPassword) {
+            return null;
+          }
+
+          return { id: user._id };
+        } catch (error) {
+          return null;
         }
-        return null;
-      }
-    })
+      },
+    }),
   ],
   callbacks: {
-    async jwt(token, user, account, profile, isNewUser) {
-      if (user) {
-        token.userId = user.id;
+    async signIn(user, account, profile) {
+      if (account.provider === 'google') {
+        await dbConnect();
+
+        try {
+          await User.findOneAndUpdate(
+            { email: user.email },
+            { $set: { email: user.email } },
+            { upsert: true }
+          );
+          return true;
+        } catch (error) {
+          return false;
+        }
       }
 
-      return token;
-    },
-
-    async session(session, token) {
-      session.user.id = token.userId;
-
-      return session;
+      return true;
     },
   },
 });
