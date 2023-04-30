@@ -1,8 +1,15 @@
-import { useSession, signIn, signOut } from 'next-auth/react';
-import Head from 'next/head';
+import { getSession, useSession, signOut } from 'next-auth/react';
 
-export default function Account() {
+import Head from 'next/head';
+import { getToken } from 'next-auth/jwt';
+
+export default function Account({ token }) {
   const { data: session } = useSession();
+  const tokenUser = token?.token?.user?.email;
+
+  if (!session) {
+    return null;
+  }
 
   return (
     <>
@@ -13,18 +20,33 @@ export default function Account() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <div className="">
-        {session ? (
+        {console.log(session)}
+        {session && (
           <>
-            Signed in as {session.user.email} <br />
+            Signed in as {tokenUser} <br />
             <button onClick={() => signOut()}>Sign out</button>
-          </>
-        ) : (
-          <>
-            Not signed in <br />
-            <button onClick={() => signIn()}>Sign in</button>
           </>
         )}
       </div>
+
     </>
   );
+}
+
+export async function getServerSideProps(context) {
+  const { req, res } = context;
+  const session = await getSession({ req });
+
+  if (!session) {
+    res.setHeader("location", "/login");
+    res.statusCode = 302;
+    res.end();
+    return;
+  }
+
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_JWT_SECRET });
+
+  return {
+    props: { token }
+  };
 }
