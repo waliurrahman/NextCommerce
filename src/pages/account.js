@@ -1,11 +1,20 @@
 import { getSession, useSession, signOut } from 'next-auth/react';
-
 import Head from 'next/head';
 import { getToken } from 'next-auth/jwt';
+import { useRouter } from "next/router";
+import { useEffect } from 'react';
+
 
 export default function Account({ token }) {
   const { data: session } = useSession();
   const tokenUser = token?.token?.user?.email;
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!session && typeof window !== "undefined") {
+      router.replace("/login");
+    }
+  }, [session]);
 
   if (!session) {
     return null;
@@ -20,7 +29,6 @@ export default function Account({ token }) {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <div className="">
-        {console.log(session)}
         {session && (
           <>
             Signed in as {tokenUser} <br />

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Head from 'next/head';
-import Router from 'next/router';
+import Router, { useRouter } from 'next/router';
+import { useSession } from 'next-auth/react';
 
 const Register = () => {
   const [username, setUsername] = useState('');
@@ -9,7 +10,14 @@ const Register = () => {
   const [fname, setFname] = useState('');
   const [lname, setLname] = useState('');
   const [error, setError] = useState('');
-
+  const { data: session } = useSession();
+  const router = useRouter();
+  
+  // Redirect to account page if user is already logged in
+  if (session) {
+    router.replace('/account');
+    return null;
+  }
   const handleSubmit = async (event) => {
     event.preventDefault();
 

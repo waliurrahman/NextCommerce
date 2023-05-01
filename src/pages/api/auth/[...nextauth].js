@@ -2,6 +2,7 @@ import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import dbConnect from 'lib/dbConnect';
 import { User } from 'models/User';
+import { signIn } from 'next-auth/react';
 
 export default NextAuth({
   secret: process.env.NEXTAUTH_SECRET,
@@ -12,7 +13,7 @@ export default NextAuth({
         password: {  label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        console.log('Credentials:', credentials); // check if email value is present
+        // console.log('Credentials:', credentials); // check if email value is present
         await dbConnect();
     
         const { email, password } = credentials;
@@ -23,14 +24,14 @@ export default NextAuth({
           throw new Error('Invalid email or password');
         }
     
-        console.log('Authorized:', { email: user.email });
+        // console.log('Authorized:', { email: user.email });
         return { email: user.email };
       },
     }),
   ],
   callbacks: {
     async signIn(user, account, profile) {
-      console.log('SignIn:', user) //check if email value is present!
+      // console.log('SignIn:', user) //check if email value is present!
       await dbConnect();
   
       try {
@@ -46,11 +47,11 @@ export default NextAuth({
       }
     },
     async session(session, user) {
-      console.log('Session:', session, user);
+      // console.log('Session:', session, user);
       return session;
     },
     async jwt(token, user, account, profile, isNewUser) {
-      console.log('JWT:', token, user, account, profile, isNewUser);
+      // console.log('JWT:', token, user, account, profile, isNewUser);
       return token;
     },
   },
